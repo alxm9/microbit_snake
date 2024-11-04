@@ -45,9 +45,9 @@ player = Snake()
 while True: # Game loop
     clear_map()
     time.sleep(0.5)
-    if button_a.is_pressed():
+    if button_a.was_pressed():
         player.change_direction("a")
-    elif button_b.is_pressed():
+    elif button_b.was_pressed():
         player.change_direction("b")
     for piece in player.body_dict:
         ledmap[player.body_dict[piece][0]][player.body_dict[piece][1]] = 5
