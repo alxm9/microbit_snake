@@ -38,6 +38,14 @@ radio.config(group=1, queue=1)
 name = "whatever"
 clients_seen = []
 
+ledmap = [
+    [ 0,0,0,0,0 ],
+    [ 0,0,0,0,0 ],
+    [ 0,0,0,0,0 ],
+    [ 0,0,0,0,0 ],
+    [ 0,0,0,0,0 ]
+]
+
 class Snake:
     def __init__(self):
         self.body_dict = { # y, x
@@ -118,15 +126,18 @@ class Edible:
 player = Snake()
 fruit = Edible()
 
-def clear_map():
-    global ledmap
-    ledmap = [
-        [ 0,0,0,0,0 ],
-        [ 0,0,0,0,0 ],
-        [ 0,0,0,0,0 ],
-        [ 0,0,0,0,0 ],
-        [ 0,0,0,0,0 ]
-    ]
+    # ledmap = [
+    #     [ 0,0,0,0,0 ],
+    #     [ 0,0,0,0,0 ],
+    #     [ 0,0,0,0,0 ],
+    #     [ 0,0,0,0,0 ],
+    #     [ 0,0,0,0,0 ]
+    # ]
+
+def clear_map(ledmap):
+    for row in ledmap:
+        for index, column in enumerate(row):
+            row[index] = 0
 
 def check_input():
     details = radio.receive_full()
@@ -149,15 +160,23 @@ def refresh_display(): # Converts the ledmap into a string that can be passed to
     
     display.show(output)
 
+def restart_game():
+    fruit.location = [3,3]
+    player.body_dict = {"piece_1": [0,0]}
+    player.time_interval = 0.5
+    player.alive = True
+    player.direction = ["right","down","left","up"]
+
 while True:
     while player.alive: # Game loop
-        clear_map()
+        clear_map(ledmap)
         check_input()
         time.sleep(player.time_interval)
         check_input() # checking inputs immediately before and after time.sleep seems to have better effect on the input
         player.move()
         player.steered = False
         refresh_display()
+    restart_game()
 
 final_score = str(len(player.body_dict))
 speech.say("game ouver") #misspelt on purpose as its easier to make out the audio output. Kinda like the NATO phonetic alphabet.
