@@ -136,7 +136,7 @@ def clear_map(ledmap):
             row[index] = 0
 
 def check_input():
-    details = [radio.receive_full() for i in range(30)]
+    details = [radio.receive_full() for i in range(30)] # Radio signal filter
     for detail in details:
         if player.steered == False and detail:
             id, rssi, timestamp = detail
@@ -184,10 +184,19 @@ def gameloop():
                 speech.say("gee gee")
                 player.name = False
                 player.alive = True 
+                send_stop_signal()
                 restart_game()
                 display.show(Image("00000:00000:00000:00000:00000")) 
                 return
-        
+            
+        if (len(player.body_dict) == 1) and player.body_dict["piece_1"] == [0,4]:
+            speech.say("disconnected")
+            send_stop_signal()
+            restart_game()
+            display.show(Image("00000:00000:00000:00000:00000"))
+            time.sleep(2)
+            return
+ 
         restart_game()
 
 def player_checker(detail):
@@ -197,11 +206,27 @@ def player_checker(detail):
         return id
     return False
 
+def send_stop_signal():
+    for i in range(30):
+        radio.send("stop")
+
+def waiting():
+    framelist = [
+        "00000:00000:00000:00000:00000",
+        "00000:00000:09000:00000:00000",
+        "00000:00000:09900:00000:00000",
+        "00000:00000:09990:00000:00000"
+    ]
+    for i in framelist:
+        display.show(Image(i))
+        time.sleep(0.4)
+
 while True:
+    waiting()
     detail = radio.receive_full() # receives id from nearby microbit
     if detail:
-        accepted = player_checker(detail)
-        if accepted:
+        playerid = player_checker(detail)
+        if playerid:
             for i in range(60):
-                radio.send(accepted+"_playsnake")
+                radio.send(playerid+"_playsnake")
             gameloop()
