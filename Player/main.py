@@ -26,23 +26,25 @@ def snake_loop():
         if counter == 7500: # breaks after a while if stop signal not detected
             break
         if button_a.was_pressed():
-            radio.send("a")
+            radio.send("inp_a")
             counter = 0
         if button_b.was_pressed():
-            radio.send("b")
+            radio.send("inp_b")
             counter = 0
         time.sleep(0.001)
         counter += 1
 
     speech.say("disconnected")
     display.show(Image("00000:00000:00000:00000:00000"))
-    
+
 
 while True:
+    # if details: ## debugging purposes
+    #     display.scroll(str(details[0],'utf8'))
     details = radio.receive_full()
     if details:
         if str(details[0],'utf8')[3:] == id+"_playsnake": # Target_snake sends back id if not in clients_seen
             speech.say("connected")
             snake_loop()
     radio.send(id)
-    time.sleep(0.1)
+    time.sleep(0.01)

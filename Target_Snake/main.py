@@ -141,7 +141,7 @@ def check_input():
         if player.steered == False and detail:
             id, rssi, timestamp = detail
             # display.scroll(str(id,"utf8"))
-            if str(id,"utf8")[-1] in ["a","b"]:
+            if str(id,"utf8")[-5:] in ["inp_a","inp_b"]: ## to fix
                 if str(id,"utf8")[-1] == "a":
                     player.change_direction("a")
                 if str(id,"utf8")[-1] == "b":
@@ -201,6 +201,8 @@ def gameloop():
 
 def player_checker(detail):
     id = str(detail[0],'utf8')[3:]
+    if id in ["???inp_a", "???inp_b"]:
+        return
     if id not in clients_seen and id not in ["a","b"]: # Ensures it doesn't take inputs as an id
         player.name = id
         return id
@@ -219,9 +221,10 @@ def waiting():
     ]
     for i in framelist:
         display.show(Image(i))
-        time.sleep(0.4)
+        time.sleep(0.2)
 
 while True:
+    # radio.send("test") # debugging purposes
     waiting()
     detail = radio.receive_full() # receives id from nearby microbit
     if detail:
@@ -229,4 +232,5 @@ while True:
         if playerid:
             for i in range(60):
                 radio.send(playerid+"_playsnake")
+                time.sleep(0.01)
             gameloop()
