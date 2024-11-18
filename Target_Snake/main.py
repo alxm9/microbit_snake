@@ -34,7 +34,7 @@ import radio
 import random
 
 radio.on()
-radio.config(group=1, queue=1)
+radio.config(group=1, queue=1, address=0x75626974) # default: address = 0x75626974
 
 name = "whatever"
 clients_seen = []
@@ -136,8 +136,9 @@ def clear_map(ledmap):
             row[index] = 0
 
 def check_input():
-    details = [radio.receive_full() for i in range(30)] # Radio signal filter
-    for detail in details:
+    details = [radio.receive_full() for i in range(20)] # Prevents input hiccups - consistent snake navigation.
+    for detail in details: 
+        # detail = radio.receive_full()
         if player.steered == False and detail:
             id, rssi, timestamp = detail
             # display.scroll(str(id,"utf8"))
@@ -148,6 +149,7 @@ def check_input():
                     player.change_direction("b")
                 player.steered = True
                 return
+
 
 def refresh_display(): # Converts the ledmap into a string that can be passed to display.show. String is in format "00000:00000:00000:00000:00000"
     for piece in player.body_dict: #
@@ -168,6 +170,8 @@ def restart_game():
 
 
 def gameloop():
+    radio.config(address=0x55443322)
+
     while True:
         speech.say("start")
         while (player.name not in clients_seen) and player.alive: # Game loop
@@ -186,7 +190,8 @@ def gameloop():
                 player.alive = True 
                 send_stop_signal()
                 restart_game()
-                display.show(Image("00000:00000:00000:00000:00000")) 
+                display.show(Image("00000:00000:00000:00000:00000"))
+                radio.config(address=0x75626974)
                 return
             
         if (len(player.body_dict) == 1) and player.body_dict["piece_1"] == [0,4]:
@@ -194,14 +199,15 @@ def gameloop():
             send_stop_signal()
             restart_game()
             display.show(Image("00000:00000:00000:00000:00000"))
-            time.sleep(2)
+            radio.config(address=0x75626974)
+            time.sleep(1)
             return
  
         restart_game()
 
 def player_checker(detail):
     id = str(detail[0],'utf8')[3:]
-    if id in ["???inp_a", "???inp_b"]:
+    if id in ["inp_a", "inp_b"]:
         return
     if id not in clients_seen and id not in ["a","b"]: # Ensures it doesn't take inputs as an id
         player.name = id
@@ -209,19 +215,20 @@ def player_checker(detail):
     return False
 
 def send_stop_signal():
-    for i in range(30):
+    for i in range(100):
         radio.send("stop")
+        time.sleep(0.01)
 
 def waiting():
     framelist = [
         "00000:00000:00000:00000:00000",
-        "00000:00000:09000:00000:00000",
-        "00000:00000:09900:00000:00000",
-        "00000:00000:09990:00000:00000"
+        "00000:00000:03000:00000:00000",
+        "00000:00000:03300:00000:00000",
+        "00000:00000:03330:00000:00000"
     ]
     for i in framelist:
         display.show(Image(i))
-        time.sleep(0.2)
+        time.sleep(0.1)
 
 while True:
     # radio.send("test") # debugging purposes
@@ -230,7 +237,7 @@ while True:
     if detail:
         playerid = player_checker(detail)
         if playerid:
-            for i in range(60):
+            for i in range(200):
                 radio.send(playerid+"_playsnake")
-                time.sleep(0.01)
+                time.sleep(0.001)
             gameloop()
