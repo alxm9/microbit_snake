@@ -34,7 +34,7 @@ import radio
 import random
 
 radio.on()
-radio.config(group=1, queue=1, address=0x75626974) # default: address = 0x75626974
+radio.config(group=1, queue=1,address = 0x75626974) # default: address = 0x75626974
 
 name = "whatever"
 clients_seen = []
@@ -170,7 +170,6 @@ def restart_game():
 
 
 def gameloop():
-    radio.config(address=0x55443322)
 
     while True:
         speech.say("start")
@@ -191,7 +190,6 @@ def gameloop():
                 send_stop_signal()
                 restart_game()
                 display.show(Image("00000:00000:00000:00000:00000"))
-                radio.config(address=0x75626974)
                 return
             
         if (len(player.body_dict) == 1) and player.body_dict["piece_1"] == [0,4]:
@@ -199,7 +197,6 @@ def gameloop():
             send_stop_signal()
             restart_game()
             display.show(Image("00000:00000:00000:00000:00000"))
-            radio.config(address=0x75626974)
             time.sleep(1)
             return
  
@@ -240,4 +237,6 @@ while True:
             for i in range(200):
                 radio.send(playerid+"_playsnake")
                 time.sleep(0.001)
+            radio.config(address=0x55443322)
             gameloop()
+            radio.config(address=0x75626974)

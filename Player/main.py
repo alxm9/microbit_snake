@@ -21,15 +21,13 @@ def snake_loop():
         details = radio.receive_full()
         if details:
             if str(details[0],'utf8')[3:] == "stop":
-                radio.config(address=0x75626974)
                 break
         if counter == 750: # breaks after a while if stop signal not detected
-            radio.config(address=0x75626974)
             break
         if button_a.was_pressed():
             radio.send("inp_a")
             counter = 0
-        if button_b.was_pressed():
+        elif button_b.was_pressed():
             radio.send("inp_b")
             counter = 0
         time.sleep(0.01)
@@ -38,13 +36,13 @@ def snake_loop():
     speech.say("disconnected")
     display.show(Image("00000:00000:00000:00000:00000"))
 
-
 while True:
     details = radio.receive_full()
     if details:
         if str(details[0],'utf8')[3:] == id+"_playsnake": # Target_snake sends back id if not in clients_seen
-            radio.config(address= 0x55443322)
+            radio.config(address=0x55443322)
             speech.say("connected")
             snake_loop()
+            radio.config(address=0x75626974) # Microbit default address
     radio.send(id)
     time.sleep(0.01)
