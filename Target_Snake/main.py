@@ -8,7 +8,6 @@
 
 # name = "kitchen"
 # clients_seen = []
-
 # with open('devices_seen.txt', 'w') as data_file:
 #     while True:
 #         details = radio.receive_full()
@@ -34,7 +33,7 @@ import radio
 import random
 
 radio.on()
-radio.config(group=1, queue=1,address = 0x75626974) # default: address = 0x75626974
+radio.config(group=1,queue=1,address = 0x75626974) # default: address = 0x75626974
 
 name = "whatever"
 clients_seen = []
@@ -137,9 +136,8 @@ def clear_map(ledmap):
 
 def check_input():
     details = [radio.receive_full() for i in range(20)] # Prevents input hiccups - consistent snake navigation.
-    for detail in details: 
-        # detail = radio.receive_full()
-        if player.steered == False and detail:
+    for detail in details:
+        if detail:
             id, rssi, timestamp = detail
             # display.scroll(str(id,"utf8"))
             if str(id,"utf8")[-5:] in ["inp_a","inp_b"]: ## to fix
@@ -190,6 +188,9 @@ def gameloop():
                 send_stop_signal()
                 restart_game()
                 display.show(Image("00000:00000:00000:00000:00000"))
+                # txt = open("seen.txt", "w")
+                # txt.write("ok")
+                # txt.close()
                 return
             
         if (len(player.body_dict) == 1) and player.body_dict["piece_1"] == [0,4]:
@@ -202,10 +203,10 @@ def gameloop():
  
         restart_game()
 
-def player_checker(detail):
-    id = str(detail[0],'utf8')[3:]
+def player_checker(id):
+    id = str(id,'utf8')[3:]
     if id in ["inp_a", "inp_b"]:
-        return
+        return False
     if id not in clients_seen and id not in ["a","b"]: # Ensures it doesn't take inputs as an id
         player.name = id
         return id
@@ -229,14 +230,16 @@ def waiting():
 
 while True:
     # radio.send("test") # debugging purposes
-    waiting()
+    # waiting()
     detail = radio.receive_full() # receives id from nearby microbit
     if detail:
-        playerid = player_checker(detail)
-        if playerid:
+        id, rssi, timestamp = detail
+        playerid = player_checker(id)
+        if playerid and (rssi > -40):
             for i in range(200):
                 radio.send(playerid+"_playsnake")
                 time.sleep(0.001)
             radio.config(address=0x55443322)
             gameloop()
             radio.config(address=0x75626974)
+    time.sleep(0.1)
