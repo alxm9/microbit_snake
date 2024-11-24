@@ -7,7 +7,7 @@ from microbit import button_a, button_b, display, Image
 radio.on()
 radio.config(group=1,queue=1, power=6) # queue=1 so input doesn't get flooded. Default address=0x75626974
 
-id = "john"
+id = "daniel"
 
 """
 For some reason str(details[0],'utf8') returns everything with "???" attached at the beginning. ( "???whatever" )
@@ -25,11 +25,11 @@ def snake_loop():
         if counter == 750: # breaks after a while if stop signal not detected
             break
         if button_a.was_pressed():
-            for _ in range(10):
+            for _ in range(20):
                 radio.send("inp_a")
                 counter = 0
         elif button_b.was_pressed():
-            for _ in range(10):
+            for _ in range(20):
                 radio.send("inp_b")
                 counter = 0
         time.sleep(0.01)

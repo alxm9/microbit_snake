@@ -137,7 +137,7 @@ def clear_map(ledmap):
 def check_input():
     if player.steered == True:
         return
-    details = [radio.receive_full() for i in range(50)] # Prevents input hiccups - consistent snake navigation.
+    details = [radio.receive_full() for i in range(100)] # Prevents input hiccups - consistent snake navigation.
     for detail in details:
         if detail:
             id, rssi, timestamp = detail
@@ -231,7 +231,6 @@ def waiting():
         time.sleep(0.1)
 
 while True:
-    # radio.send("test") # debugging purposes
     # waiting()
     detail = radio.receive_full() # receives id from nearby microbit
     if detail:
@@ -240,8 +239,7 @@ while True:
         if playerid and (rssi > -40):
             for i in range(200):
                 radio.send(playerid+"_playsnake")
-                time.sleep(0.001)
             radio.config(address=0x55443322)
             gameloop()
             radio.config(address=0x75626974)
-    time.sleep(0.12)
+    time.sleep(0.01)
