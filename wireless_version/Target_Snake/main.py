@@ -142,16 +142,24 @@ def restart_game():
 
 def appendtoseen():
     # open() 'a' mode doesn't seem to work on the microbit, writelines doesn't work either
-    try:
-        with open('seen.txt', 'r') as seen:
-            tempstore = seen.readlines()
-    except:
-        tempstore = []
+    # try:
+    #     with open('seen.txt', 'r') as seen:
+    #         tempstore = seen.readlines()
+    # except:
+    #     tempstore = []
     
-    tempstore.append(playerid+'\n')
+    # tempstore.append(playerid+'\n')
+    # with open('seen.txt','w') as seen:
+    #     seen.write()
+    try:
+        with open('seen.txt','r') as seen:
+            temp = seen.read()
+            temp += playerid+','
+    except:
+        temp = playerid+','
+
     with open('seen.txt','w') as seen:
-        for line in tempstore:
-            seen.write(line)
+        seen.write(temp)
 
 def gameloop():
 
@@ -168,7 +176,7 @@ def gameloop():
 
             if len(player.body_dict) >= 3: # if score >= 3
                 clients_seen.append(player.name)
-                speech.say("gee gee")
+                speech.say("a")
                 player.name = False
                 player.alive = True 
                 send_stop_signal()

@@ -4,6 +4,7 @@ import re
 
 root = Tk()
 root.geometry('700x500')
+root.resizeable(width=False, height=False)
 
 def restart_port():
     data = str(subprocess.run(["sudo","usb_resetter","-l"], capture_output=True).stdout)
@@ -60,10 +61,10 @@ txtoutput.pack()
 b1 = Button(root, text="Show microbit files", command = showfiles, width = 23)
 b1.place(x=0, y=350)
 
-b2 = Button(root, text="Change ttyACM0 permissions", command = lambda: sudo('ttyACM0'), width = 23)
+b2 = Button(root, text="Change ttyACM0 permissions", command = lambda: change_permissions(), width = 23)
 b2.place(x=0, y=385)
 
-b3 = Button(root, text="Reconnect microbit", command = lambda: sudo('restartport'), width = 23)
+b3 = Button(root, text="Reconnect microbit", command = lambda: restart_port(), width = 23)
 b3.place(x=0, y=420)
 
 b4 = Button(root, text="Export", command = lambda: delexp('get',choicebox.curselection()[0]), width = 7)

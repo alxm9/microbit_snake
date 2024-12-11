@@ -7,7 +7,7 @@ from microbit import button_a, button_b, display, Image
 radio.on()
 radio.config(group=1,queue=1, power=6) # queue=1 so input doesn't get flooded. Default address=0x75626974
 
-id = "bbbbb"
+id = "player2"
 
 """
 For some reason str(details[0],'utf8') returns everything with "???" attached at the beginning. ( "???whatever" )
