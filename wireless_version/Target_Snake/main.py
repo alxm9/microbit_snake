@@ -66,7 +66,7 @@ class Snake:
         if ( self.body_dict["piece_1"][0] + dy_dx[0] ) == fruit.location[0]:
             if ( self.body_dict["piece_1"][1] + dy_dx[1] ) == fruit.location[1]:
                 self.extend_body()
-                speech.say("chomp")
+                speech.say("a")
                 fruit.change_location()
 
         # location of every piece replaced with its parent's location. piece_5 to piece_4, piece_4 to piece_3...
@@ -140,6 +140,18 @@ def restart_game():
     clear_map(ledmap)
     refresh_display()
 
+def appendtoseen():
+    # open() 'a' mode doesn't seem to work on the microbit, writelines doesn't work either
+    try:
+        with open('seen.txt', 'r') as seen:
+            tempstore = seen.readlines()
+    except:
+        tempstore = []
+    
+    tempstore.append(playerid+'\n')
+    with open('seen.txt','w') as seen:
+        for line in tempstore:
+            seen.write(line)
 
 def gameloop():
 
@@ -154,7 +166,7 @@ def gameloop():
             player.steered = False # prevents oversteering
             refresh_display()
 
-            if len(player.body_dict) >= 5: # if score >= 5
+            if len(player.body_dict) >= 3: # if score >= 3
                 clients_seen.append(player.name)
                 speech.say("gee gee")
                 player.name = False
@@ -162,9 +174,7 @@ def gameloop():
                 send_stop_signal()
                 restart_game()
                 display.show(Image("00000:00000:00000:00000:00000"))
-                # txt = open("seen.txt", "w")
-                # txt.write("ok")
-                # txt.close()
+                appendtoseen()
                 return
             
         if (len(player.body_dict) == 1) and player.body_dict["piece_1"] == [0,4]:

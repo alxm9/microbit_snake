@@ -1,19 +1,35 @@
-from microbit import *
-import music
-import time
+from microbit import button_a, button_b, display, Image
 import speech
+import time
+import radio
 import random
+
+radio.on()
+radio.config(group=1,queue=1,address = 0x75626974) # default: address = 0x75626974
+
+name = "whatever"
+clients_seen = []
+
+ledmap = [
+    [ 0,0,0,0,0 ],
+    [ 0,0,0,0,0 ],
+    [ 0,0,0,0,0 ],
+    [ 0,0,0,0,0 ],
+    [ 0,0,0,0,0 ]
+]
 
 class Snake:
     def __init__(self):
+        self.name = False
         self.body_dict = { # y, x
             "piece_1": [0,0] # Starting off with one piece only
-        #   "piece_2": [0,0]
+        #   "piece_2": [0,1]
         #   "piece_....
         } # Holds the pieces of the body and the coordinates of each on the ledmap
-        #self.direction = "right"
         self.direction = ["right","down","left","up"] # index 0 is the current direction
+        self.time_interval = 0.65 #time.sleep
         self.alive = True
+        self.steered = False # If you've already steered this turn
        # self.prev_location = # previous location of last piece
 
     def change_direction(self, button):
@@ -21,9 +37,9 @@ class Snake:
             self.direction = [self.direction[1],self.direction[2],self.direction[3],self.direction[0]]
         else: # counter-clockwise
             self.direction = [self.direction[3],self.direction[0],self.direction[1],self.direction[2]]
+            
     def move(self): # Reverse iteration through self.body_dict. every piece takes the coordinates of the one above them in the body, and piece_1 moves according to direction
         #lets start off with piece 1 moving only
-        global time_interval
 
         dy_dx = {
             "right": [0,1],
@@ -50,15 +66,16 @@ class Snake:
         if ( self.body_dict["piece_1"][0] + dy_dx[0] ) == fruit.location[0]:
             if ( self.body_dict["piece_1"][1] + dy_dx[1] ) == fruit.location[1]:
                 self.extend_body()
-                time_interval = time_interval * 0.9 # speeds up game
                 speech.say("chomp")
                 fruit.change_location()
 
-        # location of every piece replaced with its "parent". piece_5 to piece_4, piece_4 to piece_3...
+        # location of every piece replaced with its parent's location. piece_5 to piece_4, piece_4 to piece_3...
         for number in range(len(self.body_dict),1,-1):
-            self.body_dict["piece_{0}".format(number)][0] = self.body_dict["piece_{0}".format(number-1)][0]
-            self.body_dict["piece_{0}".format(number)][1] = self.body_dict["piece_{0}".format(number-1)][1]
-        self.body_dict["piece_1"][0] += dy_dx[0] #dy 
+            son = "piece_{0}".format(number)
+            parent = "piece_{0}".format(number-1)
+            self.body_dict[son][0] = self.body_dict[parent][0]
+            self.body_dict[son][1] = self.body_dict[parent][1]
+        self.body_dict["piece_1"][0] += dy_dx[0] #dy #Piece_1's position is dictated by dy_dx
         self.body_dict["piece_1"][1] += dy_dx[1] #dx
 
     def extend_body(self): #
@@ -81,23 +98,32 @@ class Edible:
             if player.body_dict[key] == self.location:
                 self.change_location()
 
-def clear_map():
-    global ledmap
-    ledmap = [
-        [ 0,0,0,0,0 ],
-        [ 0,0,0,0,0 ],
-        [ 0,0,0,0,0 ],
-        [ 0,0,0,0,0 ],
-        [ 0,0,0,0,0 ]
-    ]
+player = Snake()
+fruit = Edible()
 
-def check_input(player):
-    if button_a.was_pressed(): 
-        player.change_direction("a")
-    elif button_b.was_pressed():
-        player.change_direction("b")
+def clear_map(ledmap):
+    for row in ledmap:
+        for index, column in enumerate(row):
+            row[index] = 0
 
-def refresh_display(): # Converts the ledmap into a string that can be passed to display.show. String looks something like 00000:00000:00000:00000:00000
+def check_input():
+    if player.steered == True:
+        return
+    details = [radio.receive_full() for i in range(100)] # Prevents input hiccups - consistent snake navigation.
+    for detail in details:
+        if detail:
+            id, rssi, timestamp = detail
+            # display.scroll(str(id,"utf8"))
+            if str(id,"utf8")[-5:] in ["inp_a","inp_b"]: ## to fix
+                if str(id,"utf8")[-1] == "a":
+                    player.change_direction("a")
+                if str(id,"utf8")[-1] == "b":
+                    player.change_direction("b")
+                player.steered = True
+                return
+
+
+def refresh_display(): # Converts the ledmap into a string that can be passed to display.show. String is in format "00000:00000:00000:00000:00000"
     for piece in player.body_dict: #
         ledmap[player.body_dict[piece][0]][player.body_dict[piece][1]] = 9
     ledmap[fruit.location[0]][fruit.location[1]] = 9
@@ -106,21 +132,86 @@ def refresh_display(): # Converts the ledmap into a string that can be passed to
     
     display.show(output)
 
-player = Snake()
-fruit = Edible()
-time_interval = 0.5
-
-while player.alive: # Game loop
-    clear_map()
-    check_input(player)
-    time.sleep(time_interval)
-    check_input(player) # checking inputs immediately before and after time.sleep seems to have better effect on the input
-    player.move()
+def restart_game():
+    fruit.location = [3,3]
+    player.body_dict = {"piece_1": [0,0]}
+    player.alive = True
+    player.direction = ["right","down","left","up"]
+    clear_map(ledmap)
     refresh_display()
 
-final_score = str(len(player.body_dict))
-speech.say("game ouver") #misspelt on purpose as its easier to make out the audio output. Kinda like the NATO phonetic alphabet.
-time.sleep(0.3)
-display.show(Image.SAD)
-speech.say("final score is")
-speech.say(final_score)
+
+def gameloop():
+
+    while True:
+        speech.say("start")
+        while (player.name not in clients_seen) and player.alive: # Game loop
+            clear_map(ledmap)
+            check_input()
+            time.sleep(player.time_interval)
+            check_input() # checking input immediately before and after time.sleep makes it more consistent
+            player.move()
+            player.steered = False # prevents oversteering
+            refresh_display()
+
+            if len(player.body_dict) >= 5: # if score >= 5
+                clients_seen.append(player.name)
+                speech.say("gee gee")
+                player.name = False
+                player.alive = True 
+                send_stop_signal()
+                restart_game()
+                display.show(Image("00000:00000:00000:00000:00000"))
+                # txt = open("seen.txt", "w")
+                # txt.write("ok")
+                # txt.close()
+                return
+            
+        if (len(player.body_dict) == 1) and player.body_dict["piece_1"] == [0,4]:
+            speech.say("disconnected")
+            send_stop_signal()
+            restart_game()
+            display.show(Image("00000:00000:00000:00000:00000"))
+            time.sleep(1)
+            return
+ 
+        restart_game()
+
+def player_checker(id):
+    id = str(id,'utf8')[3:]
+    if id in ["inp_a", "inp_b"]:
+        return False
+    if id not in clients_seen and id not in ["a","b"]: # Ensures it doesn't take inputs as an id
+        player.name = id
+        return id
+    return False
+
+def send_stop_signal():
+    for i in range(100):
+        radio.send("stop")
+        time.sleep(0.01)
+
+def waiting():
+    framelist = [
+        "00000:00000:00000:00000:00000",
+        "00000:00000:03000:00000:00000",
+        "00000:00000:03300:00000:00000",
+        "00000:00000:03330:00000:00000"
+    ]
+    for i in framelist:
+        display.show(Image(i))
+        time.sleep(0.1)
+
+while True:
+    # waiting()
+    detail = radio.receive_full() # receives id from nearby microbit
+    if detail:
+        id, rssi, timestamp = detail
+        playerid = player_checker(id)
+        if playerid and (rssi > -40):
+            for i in range(200):
+                radio.send(playerid+"_playsnake")
+            radio.config(address=0x55443322)
+            gameloop()
+            radio.config(address=0x75626974)
+    time.sleep(0.01)
